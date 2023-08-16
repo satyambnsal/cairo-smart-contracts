@@ -1,1 +1,1 @@
-mod name_registry;
+mod hello_world;
