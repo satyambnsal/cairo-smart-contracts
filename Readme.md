@@ -37,3 +37,5 @@ scarb --version
 - [Starknet Documentation](https://docs.starknet.io/documentation/)
 - [Starknet Book](https://book.starknet.io/)
 - [Cairo Book](https://cairo-book.github.io/)
+- [Starknet Foundry book](https://foundry-rs.github.io/)
+- [Starknet Ecosystem](https://www.starknet-ecosystem.com/)

@@ -9,4 +9,7 @@ version = "0.1.0"
 starknet = ">=2.1.0"
 
 
+# comment following line if executing non-starknet cairo programs
+[[target.starknet-contract]]
+
 
