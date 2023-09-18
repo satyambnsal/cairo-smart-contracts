@@ -9,18 +9,35 @@ sierra = true
 
 
 ### Important Commands
-1. Check rust version
+Install rust
+  ```
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  ```
+
+Check rust version
   ```
   rustc --version
   ```
-2. Install scarb
+
+Install scarb
 ```
 curl --proto '=https' --tlsv1.2 -sSf https://docs.swmansion.com/scarb/install.sh | sh
 ```
 
-3. Check scarb version
+Check scarb version
 ```
 scarb --version
+```
+
+Install **starkli**
+```
+curl https://get.starkli.sh | sh
+starkliup
+```
+
+Check **starkli** version
+```
+starkli --version
 ```
 
 
@@ -31,6 +48,8 @@ scarb --version
 
 
 ## Important Links
+- [Braavos google play store link](https://chrome.google.com/webstore/detail/braavos-smart-wallet/jnlgamecbpmbajjfhmmmlhejkemejdma)
+- 
 - [Starknet Goerli network faucet](faucet.goerli.starknet.io)
 - [Starscan](https://testnet.starkscan.co/)
 - [Voyager](https://goerli.voyager.online/?lang=en-US&theme=light)
