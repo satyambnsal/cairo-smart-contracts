@@ -58,3 +58,4 @@ starkli --version
 - [Cairo Book](https://cairo-book.github.io/)
 - [Starknet Foundry book](https://foundry-rs.github.io/)
 - [Starknet Ecosystem](https://www.starknet-ecosystem.com/)
+- [Run Starknet Locally with Katana](https://book.dojoengine.org/toolchain/katana/overview.html)
