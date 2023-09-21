@@ -1,1 +1,1 @@
-mod my_lucky_no;
+mod name_registry_v2;

@@ -40,6 +40,14 @@ Check **starkli** version
 starkli --version
 ```
 
+Create a keystore file for starkli
+```
+starkli signer keystore from-key ~/.starkli-wallets/deployer/my_keystore_1.json
+```
+Create a account descriptor
+```
+account fetch <SMART_WALLET_ADDRESS> --output ~/.starkli-wallets/deployer/my_account_1.json
+```
 
 Set Account desciptor and KeyStore path for starkli
 ```
@@ -50,6 +58,11 @@ export STARKNET_KEYSTORE=~/.starkli-wallets/deployer/my_keystore_1.json
 Set Starknet RPC
 ```
 export STARKNET_RPC="https://starknet-goerli.g.alchemy.com/v2/<API_KEY>"
+```
+
+Convert a string to felt value
+```
+starkli to-cairo-string blabla
 ```
 
 ## Important Facts
