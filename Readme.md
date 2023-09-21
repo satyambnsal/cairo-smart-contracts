@@ -41,6 +41,17 @@ starkli --version
 ```
 
 
+Set Account desciptor and KeyStore path for starkli
+```
+export STARKNET_ACCOUNT=~/.starkli-wallets/deployer/my_account_1.json
+export STARKNET_KEYSTORE=~/.starkli-wallets/deployer/my_keystore_1.json
+```
+
+Set Starknet RPC
+```
+export STARKNET_RPC="https://starknet-goerli.g.alchemy.com/v2/<API_KEY>"
+```
+
 ## Important Facts
 
 - In Cairo, a string is a collection of characters stored in a `felt252`. Strings can have a maximum length of 31 characters.
@@ -59,3 +70,4 @@ starkli --version
 - [Starknet Foundry book](https://foundry-rs.github.io/)
 - [Starknet Ecosystem](https://www.starknet-ecosystem.com/)
 - [Run Starknet Locally with Katana](https://book.dojoengine.org/toolchain/katana/overview.html)
+- [Starknet By Example Voyager book](https://starknet-by-example.voyager.online/)
