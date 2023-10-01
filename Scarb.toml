@@ -11,5 +11,5 @@ starknet = ">=2.1.0"
 
 # comment following line if executing non-starknet cairo programs
 [[target.starknet-contract]]
-
-
+sierra = true
+casm = true

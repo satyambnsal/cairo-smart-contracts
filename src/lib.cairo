@@ -1,1 +1,1 @@
-mod name_registry_v2;
+mod storage_contract_v2;
