@@ -11,8 +11,6 @@ fn square_plus(x: u8, y: u8) -> u8 {
     x * x + y
 }
 
-second_arg
-
 
 fn main() {
     let first_arg = 13;
