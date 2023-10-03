@@ -35,18 +35,6 @@ Check **starkli** version
 ```
 starkli --version
 ```
-
-Create a keystore file for starkli
-```
-starkli signer keystore from-key ~/.starkli-wallets/deployer/my_keystore_1.json
-```
-Create a account descriptor
-```
-account fetch <SMART_WALLET_ADDRESS> --output ~/.starkli-wallets/deployer/my_account_1.json
-```
-
-
-
 # Local Deployment With Katana
 
 Install Katana 
@@ -74,7 +62,7 @@ Now, you should see a prompt asking for a **Private Key**. copy first account pr
 Now. you see a prompt asking for a password. remember to enter something you can remember easily 😀
 that's it, now we have our keystore file.
 
-2. Create account descriptor file
+3. Create account descriptor file
 
 ```
 touch ~/.starkli-wallets/deployer/my_local_account_1.json
@@ -97,9 +85,9 @@ Open the newly created `my_local_account_1.json` file and paste following conten
 ```
 
 
-here replace **<SMART_WALLET_PUBLIC_KEY>** and **<SMART_WALLET_ADDRESS>** with respected values that you have from `katana` command output.
+- here replace **<SMART_WALLET_PUBLIC_KEY>** and **<SMART_WALLET_ADDRESS>** with respected values that you have from `katana` command output.
 
-to get a class hash for wallet run, replace **SMART_WALLET_ADDRESS** with respected value.
+- to get a class hash for wallet run, replace **SMART_WALLET_ADDRESS** with respected value.
 ```
 starkli class-hash-at  <SMART_WALLET_ADDRESS> --rpc http://0.0.0.0:5050
 ```
@@ -108,7 +96,7 @@ You will get class hash as the output, put that value in `my_local_account_1.jso
 
 
 
-# How to setup Katana wallet and rpc file path.
+## How to setup Katana wallet and rpc file path.
 
 Replace respected file path in `local.env` file and then run `source local.env` on terminal. you can verify if values are set correctly using
 ```
