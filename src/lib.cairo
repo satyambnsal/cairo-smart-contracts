@@ -1,1 +1,1 @@
-mod hello_world;
+mod storage_contract_v2;
