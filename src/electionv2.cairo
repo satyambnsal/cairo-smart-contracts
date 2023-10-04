@@ -27,11 +27,10 @@ mod Election {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState) {
-        let caller: ContractAddress = get_caller_address();
-        self._register_voter(caller);
+    fn constructor(ref self: ContractState, admin: ContractAddress) {
+        self._register_voter(admin);
 
-        self.owner.write(caller);
+        self.owner.write(admin);
         self.yes_votes.write(0_u8);
         self.no_votes.write(0_u8);
     }
