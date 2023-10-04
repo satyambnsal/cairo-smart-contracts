@@ -7,7 +7,8 @@ version = "0.1.0"
 [dependencies]
 # foo = { path = "vendor/foo" }
 starknet = ">=2.1.0"
-
+alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.7.0" }
 
 # comment following line if executing non-starknet cairo programs
 [[target.starknet-contract]]
