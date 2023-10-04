@@ -13,3 +13,4 @@ starknet = ">=2.1.0"
 [[target.starknet-contract]]
 sierra = true
 casm = true
+allowed-libfuncs-list.name = "experimental"
