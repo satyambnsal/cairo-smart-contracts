@@ -2,4 +2,4 @@
 // mod name_registry_v2;
 // mod my_lucky_no;
 
-mod election;
+mod electionv2;
