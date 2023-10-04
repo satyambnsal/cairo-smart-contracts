@@ -12,3 +12,16 @@ NameRegistry V2 testnet address: 0x01db2752c569d331c31da48762a292a30444a7c8bd3d6
 
 
 0x029ab7471d8a3954ca35e38ec7271380e6e12ad06c96dbbb90c1aa3ebb9d7b5e
+
+
+
+
+
+
+Election Contract Testnet Address: 
+
+v1: 0x043c7982138f2503f3dee6e1af8fb902cc3485d059c290a21fa83f1933567197
+v2
+0x0241163bdcf86f39cfe396a9a1ee1cc5129a18fd33796faad7417aa1a56f1228
+
+
