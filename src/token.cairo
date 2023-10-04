@@ -10,8 +10,8 @@ mod MyToken {
 
     #[constructor]
     fn constructor(ref self: ContractState) {
-        let name = 'MyToken';
-        let symbol = 'MTK';
+        let name = 'DevToken';
+        let symbol = 'DEVT';
         let initial_supply = 1000000;
         let supply: u256 = initial_supply.into();
         let recipient: ContractAddress =
