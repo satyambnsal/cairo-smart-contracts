@@ -24,7 +24,6 @@ Check scarb version
 ```
 scarb --version
 ```
-
 Install **starkli**
 ```
 curl https://get.starkli.sh | sh
@@ -210,3 +209,4 @@ create a file `~/.starkli-wallets/deployer/my_testnet_account1.json` with follow
 - [Run Starknet Locally with Katana](https://book.dojoengine.org/toolchain/katana/overview.html)
 - [Starknet By Example Voyager book](https://starknet-by-example.voyager.online/)
 - [Starknet Converter Utility](https://www.stark-utils.xyz/converter)
+- [Starknet docs](https://docs.starknet.io/)
