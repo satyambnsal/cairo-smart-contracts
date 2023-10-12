@@ -37,7 +37,7 @@ fn test_cannot_increase_balance_with_zero_value() {
     let safe_dispatcher = IHelloStarknetSafeDispatcher { contract_address };
 
     let balance_before = safe_dispatcher.get_balance().unwrap();
-    assert(balance_before == 1, 'Invalid balance');
+    assert(balance_before == 0, 'Invalid balance');
 
     match safe_dispatcher.increase_balance(0) {
         Result::Ok(_) => panic_with_felt252('Should have panicked'),

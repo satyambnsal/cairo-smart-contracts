@@ -23,3 +23,8 @@ exit_first = true
 account = "~/.starkli-wallets/deployer/my_local_account_2.json"
 keystore-file = "~/.starkli-wallets/deployer/my_local_account_2_key.json"
 url = "http://127.0.0.1:5050"
+
+[tool.sncast.testnet]
+account = "~/.starkli-wallets/deployer/my_testnet_account_1.json"
+keystore-file = "~/.starkli-wallets/deployer/my_testnet_account_1_key.json"
+url = "https://starknet-goerli.infura.io/v3/${KEY}"

@@ -43,6 +43,7 @@ cd dojo
 cargo install --path ./crates/katana --locked --force
 ```
 
+
 ## How to Generate a keystore and account descriptor for Local development
 
 1. Start katana with `katana` command. You should see a list of accounts with **Account Address**, **Private Key**, and **Public Key**
@@ -194,6 +195,11 @@ create a file `~/.starkli-wallets/deployer/my_testnet_account1.json` with follow
 - Get **<PUBLIC_KEY>**, from **Privacy and Security** section in **Braavos**
 - To get classhash, open `https://testnet.starkscan.co/contract/<WALLET_ADDRESS>` link in browser. you should be able to see classhash for your account.
 
+
+
+# Other Useful commands
+
+1. Run `scarb --offline build` to build a project without updating dependencies.
 
 
 ## Important Links
