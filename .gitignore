@@ -2,3 +2,4 @@ target
 .env
 testnet.env
 secret-notes.md
+cache
