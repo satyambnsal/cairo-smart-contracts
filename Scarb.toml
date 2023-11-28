@@ -1,13 +1,19 @@
 [package]
 name = "cairo_contracts"
-version = "0.1.0"
+version = "0.2.0"
+authors = ["Satyam Bansal <satyamsgsits1994@gmail.com>"]
+description = "Collection of commonly used starknet smart contracts"
+readme = "README.md"
+repository = "https://github.com/satyambnsal/cairo-smart-contracts"
+license = "MIT"
+keywords = ["Cairo", "Starknet", "Layer2"]
 
 [dependencies]
 # foo = { path = "vendor/foo" }
 starknet = ">=2.1.0"
 # alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git", tag = "cairo-v2.1.0" }
-openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.7.0" }
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.7.1" }
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.8.0" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.8.1" }
 
 # comment following line if executing non-starknet cairo programs
 [[target.starknet-contract]]
