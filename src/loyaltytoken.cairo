@@ -13,7 +13,8 @@ mod LoyaltyToken {
     #[storage]
     struct Storage {
         #[substorage(v0)]
-        erc20: ERC20Component::Storage
+        erc20: ERC20Component::Storage,
+        val: u8
     }
 
     #[event]
