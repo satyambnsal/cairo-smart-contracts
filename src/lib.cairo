@@ -9,5 +9,6 @@
 // mod sillyapes;
 // mod sample_tests;
 
-mod electionv3;
+// mod electionv3;
 
+mod loyaltytoken;
