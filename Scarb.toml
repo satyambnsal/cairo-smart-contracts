@@ -13,7 +13,7 @@ keywords = ["Cairo", "Starknet", "Layer2"]
 starknet = ">=2.1.0"
 # alexandria_math = { git = "https://github.com/keep-starknet-strange/alexandria.git", tag = "cairo-v2.1.0" }
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.8.0" }
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.8.1" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.11.0" }
 
 # comment following line if executing non-starknet cairo programs
 [[target.starknet-contract]]
@@ -25,12 +25,13 @@ allowed-libfuncs-list.name = "experimental"
 [tool.snforge]
 exit_first = true
 
-[tool.sncast.localaccount1]
-account = "~/.starkli-wallets/deployer/my_local_account_2.json"
-keystore-file = "~/.starkli-wallets/deployer/my_local_account_2_key.json"
-url = "http://127.0.0.1:5050"
+[tool.sncast.localaccount6]
+account = "localaccount6"
+accounts-file = "/Users/satyam/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+url = "http://127.0.0.1:5050/"
 
-[tool.sncast.testnet]
-account = "~/.starkli-wallets/deployer/my_testnet_account_1.json"
-keystore-file = "~/.starkli-wallets/deployer/my_testnet_account_1_key.json"
-url = "https://starknet-goerli.infura.io/v3/${KEY}"
+
+[tool.sncast.testnet1]
+account = "testnet1"
+accounts-file = "/Users/satyam/.starknet_accounts/starknet_open_zeppelin_accounts.json"
+url = "https://starknet-goerli.infura.io/v3/0ae9d2edafaa4ab3af19c4600b93fd0a"

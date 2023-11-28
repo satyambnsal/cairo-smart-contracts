@@ -198,7 +198,18 @@ create a file `~/.starkli-wallets/deployer/my_testnet_account1.json` with follow
 
 # Starknet foundry commands
 
+Declare a contract
 
+```
+sncast --profile <profile-name> declare --contract-name 
+<contract-name>
+```
+
+Deploy a contract
+
+```
+sncast --profile testnet1 deploy --class-hash <class-hash> --constructor-calldata 10000000000  0 0x032aee2a95f251a984a391fb2919757a9074065f3c12b010a142c9fd939e933
+```
 
 
 # Other Useful commands
