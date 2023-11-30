@@ -12,6 +12,8 @@ trait ElectionV3Trait<TContractState> {
 #[starknet::contract]
 mod ElectionV3 {
     use starknet::{ContractAddress, get_caller_address};
+    use alexandria_storage::list::{List, ListTrait};
+
     const YES: u8 = 1_u8;
     const NO: u8 = 0_u8;
 
@@ -21,7 +23,8 @@ mod ElectionV3 {
         no_votes: u8,
         can_vote: LegacyMap::<ContractAddress, bool>,
         registered_voter: LegacyMap::<ContractAddress, bool>,
-        owner: ContractAddress
+        owner: ContractAddress,
+        title: List<felt252>
     }
 
     #[constructor]
@@ -146,6 +149,13 @@ mod ElectionV3 {
             let no_percentage: u8 = (no_votes * 100_u8) / (total_votes);
 
             (yes_percentage, no_percentage)
+        }
+    }
+
+    #[generate_trait]
+    impl PrivateImpl of PrivateTrait {
+        fn _set_title(ref self: ContractState, title: Span<felt252>) {
+            
         }
     }
 }

@@ -12,3 +12,4 @@
 mod electionv3;
 
 mod loyaltytoken;
+mod errors;
