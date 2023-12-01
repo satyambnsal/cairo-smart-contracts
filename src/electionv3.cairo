@@ -7,6 +7,7 @@ trait ElectionV3Trait<TContractState> {
     fn voter_can_vote(self: @TContractState, user_address: ContractAddress) -> bool;
     fn is_voter_registered(self: @TContractState, user_address: ContractAddress) -> bool;
     fn register_voter(ref self: TContractState, user_address: ContractAddress);
+    fn get_title(self: @TContractState) -> Span<felt252>;
 }
 
 #[starknet::contract]
@@ -28,10 +29,11 @@ mod ElectionV3 {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, admin: ContractAddress) {
+    fn constructor(ref self: ContractState, admin: ContractAddress, title: Span<felt252>) {
         // register admin as voter
         // make admin a contract owner
         self.owner.write(admin);
+        self._set_title(title);
 
         // initialize yes and no votes count to 0 in storage
         self.yes_votes.write(0_u8);
@@ -104,6 +106,11 @@ mod ElectionV3 {
             self._register_voter(user_address);
             self.emit(VoterRegistered { voter: user_address });
         }
+
+        fn get_title(self: @ContractState) -> Span<felt252> {
+            let mut title = self.title.read();
+            title.array().expect('syscall error').span()
+        }
     }
 
 
@@ -154,8 +161,9 @@ mod ElectionV3 {
 
     #[generate_trait]
     impl PrivateImpl of PrivateTrait {
-        fn _set_title(ref self: ContractState, title: Span<felt252>) {
-            
+        fn _set_title(ref self: ContractState, new_title: Span<felt252>) {
+            let mut title = self.title.read();
+            title.append_span(new_title).expect('failed to set title')
         }
     }
 }
