@@ -35,4 +35,4 @@ url = "http://127.0.0.1:5050/"
 [tool.sncast.testnet1]
 account = "testnet1"
 accounts-file = "/Users/satyam/.starknet_accounts/starknet_open_zeppelin_accounts.json"
-url = "https://starknet-goerli.infura.io/v3/0ae9d2edafaa4ab3af19c4600b93fd0a"
+url = "https://starknet-goerli.g.alchemy.com/v2/u9atiwbDU8wsZfikEV9AzPMBKL8adzJM"

@@ -1,9 +1,9 @@
 #[starknet::contract]
-mod LoyaltyToken {
+mod QSDCToken {
     use openzeppelin::token::erc20::interface::IERC20Metadata;
-use openzeppelin::token::erc20::ERC20Component;
+    use openzeppelin::token::erc20::ERC20Component;
     use openzeppelin::token::erc20::interface;
-    use starknet::ContractAddress;
+    use starknet::{ContractAddress, get_caller_address};
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
     #[abi(embed_v0)]
@@ -27,12 +27,12 @@ use openzeppelin::token::erc20::ERC20Component;
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, decimals: u8, initial_supply: u256, recipient: ContractAddress) {
-        let name = 'LoyaltyToken1';
-        let symbol = 'LOYALTY1';
-        self._set_decimals(decimals);
+    fn constructor(ref self: ContractState, owner: ContractAddress) {
+        let name = 'QSDC Token';
+        let symbol = 'QSDC';
+        self._set_decimals(2);
         self.erc20.initializer(name, symbol);
-        self.erc20._mint(recipient, initial_supply);
+        self.erc20._mint(owner, 1_000_000_000);
     }
 
     #[external(v0)]
