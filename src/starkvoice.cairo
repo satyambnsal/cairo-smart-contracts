@@ -1,164 +1,202 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait StarkVoiceTrait<TContractState> {
-    fn get_vote_status(self: @TContractState) -> (u8, u8, u8, u8);
-    fn vote(ref self: TContractState, vote: u8);
-    fn voter_can_vote(self: @TContractState, user_address: ContractAddress) -> bool;
-    fn is_voter_registered(self: @TContractState, user_address: ContractAddress) -> bool;
-    fn register_voter(ref self: TContractState, user_address: ContractAddress);
-    fn get_title(self: @TContractState) -> Span<felt252>;
+trait IStarkVoice<TContractState> {
+    fn get_vote_status(self: @TContractState, proposal_id: u64) -> (u256, u256, u8, u8);
+    fn vote(ref self: TContractState, proposal_id: u64, vote: u8);
+    fn voter_can_vote(
+        self: @TContractState, user_address: ContractAddress, proposal_id: u64
+    ) -> bool;
+    fn get_proposal_title(self: @TContractState, proposal_id: u64) -> (felt252, felt252, felt252);
+    fn create_proposal(ref self: TContractState, title: (felt252, felt252, felt252), details_ipfs_url: (felt252, felt252, felt252)) -> u64;
+    fn eligibility_token(self: @TContractState) -> ContractAddress;
 }
 
 #[starknet::contract]
 mod StarkVoice {
     use starknet::{ContractAddress, get_caller_address};
     use alexandria_storage::list::{List, ListTrait};
-    use openzeppelin::token::erc20::{
-        ERC20ABIDispatcher, ERC20Component::Errors as ERC20Errors,
-        interface::{ERC20ABIDispatcherTrait, IERC20}
-    };
+    use openzeppelin::token::erc20::{ERC20ABIDispatcher, interface::{ERC20ABIDispatcherTrait}};
 
     const YES: u8 = 1_u8;
     const NO: u8 = 0_u8;
 
     #[storage]
     struct Storage {
-        yes_votes: u8,
-        no_votes: u8,
-        can_vote: LegacyMap::<ContractAddress, bool>,
-        registered_voter: LegacyMap::<ContractAddress, bool>,
         owner: ContractAddress,
-        title: List<felt252>,
-        token: ContractAddress
+        eligibility_token: ContractAddress,
+        proposal_count: u64,
+        proposals: LegacyMap<u64, Proposal>,
+        has_voted: LegacyMap<(u64, ContractAddress), bool>,
+        name: felt252
+    }
+
+    #[derive(Drop, Serde, starknet::Store)]
+    struct Proposal {
+        proposal_id: u64,
+        yes_votes: u256,
+        no_votes: u256,
+        details_ipfs_url: (felt252, felt252, felt252),
+        title: (felt252, felt252, felt252),
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, admin: ContractAddress, title: Span<felt252>) {
-        // register admin as voter
-        // make admin a contract owner
-        self.owner.write(admin);
-        self._set_title(title);
+    fn constructor(ref self: ContractState, eligibility_token: ContractAddress, name: felt252) {
+        let admin = get_caller_address();
 
-        // initialize yes and no votes count to 0 in storage
-        self.yes_votes.write(0_u8);
-        self.no_votes.write(0_u8)
+        let erc20_token = ERC20ABIDispatcher { contract_address: eligibility_token };
+        let balance = erc20_token.balance_of(admin);
+        assert(balance > 0, 'TOKEN_BALANCE_IS_ZERO');
+
+        // initialize storage 
+        self.proposal_count.write(0);
+        self.eligibility_token.write(eligibility_token);
+        self.owner.write(admin);
+        self.name.write(name);
     }
 
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
+        NewProposal: NewProposal,
         VoteCast: VoteCast,
         UnauthorizedAttempt: UnauthorizedAttempt,
-        VoterRegistered: VoterRegistered
     }
 
     #[derive(Drop, starknet::Event)]
     struct VoteCast {
         voter: ContractAddress,
+        proposal_id: u64,
         vote: u8
     }
 
     #[derive(Drop, starknet::Event)]
     struct UnauthorizedAttempt {
-        unauthorized_address: ContractAddress
+        unauthorized_address: ContractAddress,
+        proposal_id: u64
     }
 
     #[derive(Drop, starknet::Event)]
-    struct VoterRegistered {
-        voter: ContractAddress
+    struct NewProposal {
+        proposal_id: u64,
+        title: (felt252, felt252, felt252),
     }
 
-
     #[external(v0)]
-    impl StarkVoiceImpl of super::StarkVoiceTrait<ContractState> {
-        fn get_vote_status(self: @ContractState) -> (u8, u8, u8, u8) {
-            let (yes_votes, no_votes) = self._get_voting_result();
-            let (yes_percentage, no_percentage) = self._get_voting_result_in_percentage();
+    impl StarkVoiceImpl of super::IStarkVoice<ContractState> {
+        fn create_proposal(
+            ref self: ContractState, title: (felt252, felt252, felt252), details_ipfs_url: (felt252, felt252, felt252)
+        ) -> u64 {
+            let proposal_count = self.proposal_count.read();
+            let proposal_id = proposal_count + 1;
+            let proposal = Proposal {
+                proposal_id, yes_votes: 0, no_votes: 0,
+                title,
+                details_ipfs_url
+            };
+            self.proposals.write(proposal_id, proposal);
+            self.emit(NewProposal { proposal_id, title });
+            proposal_id
+        }
 
+        fn get_vote_status(self: @ContractState, proposal_id: u64) -> (u256, u256, u8, u8) {
+            let (yes_votes, no_votes) = self._get_voting_result(proposal_id);
+            let (yes_percentage, no_percentage) = self
+                ._get_voting_result_in_percentage(proposal_id);
             (yes_votes, no_votes, yes_percentage, no_percentage)
         }
 
-        fn vote(ref self: ContractState, vote: u8) {
+        fn vote(ref self: ContractState, proposal_id: u64, vote: u8) {
             assert(vote == YES || vote == NO, 'VOTE_MUST_BE_0_OR_1');
             let caller: ContractAddress = get_caller_address();
-            self._assert_vote_allowed(caller);
-            self.can_vote.write(caller, false);
+            self._assert_vote_allowed(caller, proposal_id);
+            self.has_voted.write((proposal_id, caller), false);
+            let mut proposal = self.proposals.read(proposal_id);
+            let vote_count = self._token_balance();
+
             if (vote == NO) {
-                self.no_votes.write(self.no_votes.read() + 1_u8);
+                proposal.no_votes = proposal.no_votes + vote_count;
             }
             if (vote == YES) {
-                self.yes_votes.write(self.yes_votes.read() + 1_u8);
+                proposal.yes_votes = proposal.yes_votes + vote_count;
             }
+            self.proposals.write(proposal_id, proposal);
 
-            self.emit(VoteCast { voter: caller, vote })
+            self.emit(VoteCast { voter: caller, vote, proposal_id })
         }
 
-        fn voter_can_vote(self: @ContractState, user_address: ContractAddress) -> bool {
-            self.can_vote.read(user_address)
+        fn voter_can_vote(
+            self: @ContractState, user_address: ContractAddress, proposal_id: u64
+        ) -> bool {
+            self._can_vote(user_address, proposal_id)
         }
 
-        fn is_voter_registered(self: @ContractState, user_address: ContractAddress) -> bool {
-            self.registered_voter.read(user_address)
+        fn get_proposal_title(self: @ContractState, proposal_id: u64) -> (felt252, felt252, felt252) {
+            let proposal = self.proposals.read(proposal_id);
+            proposal.title
         }
 
-        fn register_voter(ref self: ContractState, user_address: ContractAddress) {
-            let caller: ContractAddress = get_caller_address();
-            let admin: ContractAddress = self.owner.read();
-
-            assert(admin == caller, 'CALLER_SHOULD_BE_ADMIN');
-
-            self._register_voter(user_address);
-            self.emit(VoterRegistered { voter: user_address });
-        }
-
-        fn get_title(self: @ContractState) -> Span<felt252> {
-            let mut title = self.title.read();
-            title.array().expect('syscall error').span()
+        fn eligibility_token(self: @ContractState) -> ContractAddress {
+            self.eligibility_token.read()
         }
     }
 
 
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
-        fn _register_voter(ref self: ContractState, user_address: ContractAddress) {
-            self.registered_voter.write(user_address, true);
-            self.can_vote.write(user_address, true);
-        }
+        fn _assert_vote_allowed(
+            ref self: ContractState, user_address: ContractAddress, proposal_id: u64
+        ) {
+            let has_tokens = self._has_tokens();
+            let has_voted = self.has_voted.read((proposal_id, user_address));
 
-        fn _assert_vote_allowed(ref self: ContractState, user_address: ContractAddress) {
-            let is_voter: bool = self.registered_voter.read(user_address);
-            let can_vote = self.can_vote.read(user_address);
-
-            if (can_vote == false) {
-                self.emit(UnauthorizedAttempt { unauthorized_address: user_address });
+            if (has_voted == true) {
+                self.emit(UnauthorizedAttempt { unauthorized_address: user_address, proposal_id });
             }
-            assert(is_voter == true, 'USER_NOT_REGISTERED');
-            assert(can_vote == true, 'USER_ALREADY_VOTED');
+
+            if (has_tokens == false) {
+                self.emit(UnauthorizedAttempt { unauthorized_address: user_address, proposal_id });
+            }
+
+            assert(has_tokens == true, 'INSUFFICIENT_TOKEN_BALANCE');
+            assert(has_voted == false, 'USER_ALREADY_VOTED')
+        }
+        fn _can_vote(
+            self: @ContractState, user_address: ContractAddress, proposal_id: u64
+        ) -> bool {
+            let has_tokens = self._has_tokens();
+            let has_voted = self.has_voted.read((proposal_id, user_address));
+
+            if (has_tokens && has_voted == false) {
+                true
+            } else {
+                false
+            }
         }
     }
 
     #[generate_trait]
     impl VoteResultMethodImpl of VoteResultMethodImplTrait {
-        fn _get_voting_result(self: @ContractState) -> (u8, u8) {
-            let yes_votes: u8 = self.yes_votes.read();
-            let no_votes: u8 = self.no_votes.read();
-
+        fn _get_voting_result(self: @ContractState, proposal_id: u64) -> (u256, u256) {
+            let proposal = self.proposals.read(proposal_id);
+            let yes_votes: u256 = proposal.yes_votes;
+            let no_votes: u256 = proposal.no_votes;
             (yes_votes, no_votes)
         }
 
-        fn _get_voting_result_in_percentage(self: @ContractState) -> (u8, u8) {
-            let yes_votes: u8 = self.yes_votes.read();
-            let no_votes: u8 = self.no_votes.read();
+        fn _get_voting_result_in_percentage(self: @ContractState, proposal_id: u64) -> (u8, u8) {
+            let proposal = self.proposals.read(proposal_id);
+            let yes_votes = proposal.yes_votes;
+            let no_votes = proposal.no_votes;
 
-            let total_votes: u8 = yes_votes + no_votes;
+            let total_votes: u256 = yes_votes + no_votes;
 
             if (total_votes == 0) {
                 return (0, 0);
             }
 
-            let yes_percentage: u8 = (yes_votes * 100_u8) / (total_votes);
-            let no_percentage: u8 = (no_votes * 100_u8) / (total_votes);
+            let yes_percentage: u8 = ((yes_votes * 100_u256) / (total_votes)).try_into().unwrap();
+            let no_percentage: u8 = ((no_votes * 100_u256) / (total_votes)).try_into().unwrap();
 
             (yes_percentage, no_percentage)
         }
@@ -166,9 +204,24 @@ mod StarkVoice {
 
     #[generate_trait]
     impl PrivateImpl of PrivateTrait {
-        fn _set_title(ref self: ContractState, new_title: Span<felt252>) {
-            let mut title = self.title.read();
-            title.append_span(new_title).expect('failed to set title')
+        fn _token_balance(self: @ContractState) -> u256 {
+            let admin = get_caller_address();
+
+            let eligibility_token_address = self.eligibility_token.read();
+            let eligibility_token = ERC20ABIDispatcher {
+                contract_address: eligibility_token_address
+            };
+            let balance = eligibility_token.balance_of(admin);
+            balance
+        }
+
+        fn _has_tokens(self: @ContractState) -> bool {
+            let balance = self._token_balance();
+            if (balance > 0) {
+                true
+            } else {
+                false
+            }
         }
     }
 }
