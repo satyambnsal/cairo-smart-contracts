@@ -1,18 +1,23 @@
 use starknet::ContractAddress;
 
-
 #[starknet::interface]
-trait ElectionTrait<TContractState> {
+trait StarkVoiceTrait<TContractState> {
     fn get_vote_status(self: @TContractState) -> (u8, u8, u8, u8);
     fn vote(ref self: TContractState, vote: u8);
     fn voter_can_vote(self: @TContractState, user_address: ContractAddress) -> bool;
     fn is_voter_registered(self: @TContractState, user_address: ContractAddress) -> bool;
     fn register_voter(ref self: TContractState, user_address: ContractAddress);
+    fn get_title(self: @TContractState) -> Span<felt252>;
 }
 
 #[starknet::contract]
-mod Election {
+mod StarkVoice {
     use starknet::{ContractAddress, get_caller_address};
+    use alexandria_storage::list::{List, ListTrait};
+    use openzeppelin::token::erc20::{
+        ERC20ABIDispatcher, ERC20Component::Errors as ERC20Errors,
+        interface::{ERC20ABIDispatcherTrait, IERC20}
+    };
 
     const YES: u8 = 1_u8;
     const NO: u8 = 0_u8;
@@ -23,18 +28,22 @@ mod Election {
         no_votes: u8,
         can_vote: LegacyMap::<ContractAddress, bool>,
         registered_voter: LegacyMap::<ContractAddress, bool>,
-        owner: ContractAddress
+        owner: ContractAddress,
+        title: List<felt252>,
+        token: ContractAddress
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, admin: ContractAddress) {
-        self._register_voter(admin);
-
+    fn constructor(ref self: ContractState, admin: ContractAddress, title: Span<felt252>) {
+        // register admin as voter
+        // make admin a contract owner
         self.owner.write(admin);
-        self.yes_votes.write(0_u8);
-        self.no_votes.write(0_u8);
-    }
+        self._set_title(title);
 
+        // initialize yes and no votes count to 0 in storage
+        self.yes_votes.write(0_u8);
+        self.no_votes.write(0_u8)
+    }
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -52,30 +61,28 @@ mod Election {
 
     #[derive(Drop, starknet::Event)]
     struct UnauthorizedAttempt {
-        unauthorized_address: ContractAddress,
+        unauthorized_address: ContractAddress
     }
 
     #[derive(Drop, starknet::Event)]
     struct VoterRegistered {
-        voter: ContractAddress,
+        voter: ContractAddress
     }
 
 
     #[external(v0)]
-    impl ElectionImpl of super::ElectionTrait<ContractState> {
+    impl StarkVoiceImpl of super::StarkVoiceTrait<ContractState> {
         fn get_vote_status(self: @ContractState) -> (u8, u8, u8, u8) {
             let (yes_votes, no_votes) = self._get_voting_result();
-            let (yes_votes_perc, no_votes_perc) = self._get_voting_result_in_percentage();
-            (yes_votes, no_votes, yes_votes_perc, no_votes_perc)
+            let (yes_percentage, no_percentage) = self._get_voting_result_in_percentage();
+
+            (yes_votes, no_votes, yes_percentage, no_percentage)
         }
 
         fn vote(ref self: ContractState, vote: u8) {
-            assert(vote == YES || vote == NO, 'Vote_0_OR_1');
+            assert(vote == YES || vote == NO, 'VOTE_MUST_BE_0_OR_1');
             let caller: ContractAddress = get_caller_address();
-
-            // check if user is allowed to vote
             self._assert_vote_allowed(caller);
-
             self.can_vote.write(caller, false);
             if (vote == NO) {
                 self.no_votes.write(self.no_votes.read() + 1_u8);
@@ -83,12 +90,14 @@ mod Election {
             if (vote == YES) {
                 self.yes_votes.write(self.yes_votes.read() + 1_u8);
             }
-            self.emit(VoteCast { voter: caller, vote });
+
+            self.emit(VoteCast { voter: caller, vote })
         }
 
         fn voter_can_vote(self: @ContractState, user_address: ContractAddress) -> bool {
             self.can_vote.read(user_address)
         }
+
         fn is_voter_registered(self: @ContractState, user_address: ContractAddress) -> bool {
             self.registered_voter.read(user_address)
         }
@@ -102,11 +111,17 @@ mod Election {
             self._register_voter(user_address);
             self.emit(VoterRegistered { voter: user_address });
         }
+
+        fn get_title(self: @ContractState) -> Span<felt252> {
+            let mut title = self.title.read();
+            title.array().expect('syscall error').span()
+        }
     }
+
 
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
-        fn _register_voter(ref self: ContractState, user_address: ContractAddress,) {
+        fn _register_voter(ref self: ContractState, user_address: ContractAddress) {
             self.registered_voter.write(user_address, true);
             self.can_vote.write(user_address, true);
         }
@@ -118,12 +133,10 @@ mod Election {
             if (can_vote == false) {
                 self.emit(UnauthorizedAttempt { unauthorized_address: user_address });
             }
-
             assert(is_voter == true, 'USER_NOT_REGISTERED');
             assert(can_vote == true, 'USER_ALREADY_VOTED');
         }
     }
-
 
     #[generate_trait]
     impl VoteResultMethodImpl of VoteResultMethodImplTrait {
@@ -135,8 +148,8 @@ mod Election {
         }
 
         fn _get_voting_result_in_percentage(self: @ContractState) -> (u8, u8) {
-            let yes_votes = self.yes_votes.read();
-            let no_votes = self.no_votes.read();
+            let yes_votes: u8 = self.yes_votes.read();
+            let no_votes: u8 = self.no_votes.read();
 
             let total_votes: u8 = yes_votes + no_votes;
 
@@ -145,8 +158,17 @@ mod Election {
             }
 
             let yes_percentage: u8 = (yes_votes * 100_u8) / (total_votes);
-            let no_percentage: u8 = (no_votes * 100_u8) / total_votes;
+            let no_percentage: u8 = (no_votes * 100_u8) / (total_votes);
+
             (yes_percentage, no_percentage)
+        }
+    }
+
+    #[generate_trait]
+    impl PrivateImpl of PrivateTrait {
+        fn _set_title(ref self: ContractState, new_title: Span<felt252>) {
+            let mut title = self.title.read();
+            title.append_span(new_title).expect('failed to set title')
         }
     }
 }
