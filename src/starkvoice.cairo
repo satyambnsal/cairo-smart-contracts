@@ -14,7 +14,7 @@ trait IStarkVoice<TContractState> {
 
 #[starknet::contract]
 mod StarkVoice {
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use alexandria_storage::list::{List, ListTrait};
     use openzeppelin::token::erc20::{ERC20ABIDispatcher, interface::{ERC20ABIDispatcherTrait}};
 
@@ -28,7 +28,8 @@ mod StarkVoice {
         proposal_count: u64,
         proposals: LegacyMap<u64, Proposal>,
         has_voted: LegacyMap<(u64, ContractAddress), bool>,
-        name: felt252
+        name: felt252,
+        id: u64
     }
 
     #[derive(Drop, Serde, starknet::Store)]
@@ -53,6 +54,10 @@ mod StarkVoice {
         self.eligibility_token.write(eligibility_token);
         self.owner.write(admin);
         self.name.write(name);
+        let id: u64 = get_block_timestamp();
+        self.id.write(id);
+
+        self.emit(NewSpace {name,id});
     }
 
     #[event]
@@ -61,6 +66,7 @@ mod StarkVoice {
         NewProposal: NewProposal,
         VoteCast: VoteCast,
         UnauthorizedAttempt: UnauthorizedAttempt,
+        NewSpace: NewSpace
     }
 
     #[derive(Drop, starknet::Event)]
@@ -80,6 +86,13 @@ mod StarkVoice {
     struct NewProposal {
         proposal_id: u64,
         title: (felt252, felt252, felt252),
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct NewSpace {
+        #[key]        
+        id: u64,
+        name: felt252
     }
 
     #[external(v0)]
