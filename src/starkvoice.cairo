@@ -2,14 +2,17 @@ use starknet::ContractAddress;
 
 #[starknet::interface]
 trait IStarkVoice<TContractState> {
-
     fn get_vote_status(self: @TContractState, proposal_id: u64) -> (u256, u256, u8, u8);
     fn vote(ref self: TContractState, proposal_id: u64, vote: u8);
     fn voter_can_vote(
         self: @TContractState, user_address: ContractAddress, proposal_id: u64
     ) -> bool;
     fn get_proposal_title(self: @TContractState, proposal_id: u64) -> (felt252, felt252, felt252);
-    fn create_proposal(ref self: TContractState, title: (felt252, felt252, felt252), details_ipfs_url: (felt252, felt252, felt252)) -> u64;
+    fn create_proposal(
+        ref self: TContractState,
+        title: (felt252, felt252, felt252),
+        details_ipfs_url: (felt252, felt252, felt252)
+    ) -> u64;
     fn eligibility_token(self: @TContractState) -> ContractAddress;
     fn configure_timewindow(ref self: TContractState, proposal_id: u64, earliest: u64, latest: u64);
     fn is_voting_window_open(self: @TContractState, proposal_id: u64) -> bool;
@@ -21,7 +24,7 @@ mod StarkVoice {
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use alexandria_storage::list::{List, ListTrait};
     use openzeppelin::token::erc20::{ERC20ABIDispatcher, interface::{ERC20ABIDispatcherTrait}};
-
+    use debug::PrintTrait;
     const YES: u8 = 1_u8;
     const NO: u8 = 0_u8;
 
@@ -32,7 +35,7 @@ mod StarkVoice {
         proposal_count: u64,
         proposals: LegacyMap<u64, Proposal>,
         has_voted: LegacyMap<(u64, ContractAddress), bool>,
-        name: felt252,
+        title: felt252,
         id: u64
     }
 
@@ -48,8 +51,7 @@ mod StarkVoice {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, eligibility_token: ContractAddress, name: felt252) {
-        let admin = get_caller_address();
+    fn constructor(ref self: ContractState, admin: ContractAddress, eligibility_token: ContractAddress, title: felt252) {
 
         let erc20_token = ERC20ABIDispatcher { contract_address: eligibility_token };
         let balance = erc20_token.balance_of(admin);
@@ -59,11 +61,11 @@ mod StarkVoice {
         self.proposal_count.write(0);
         self.eligibility_token.write(eligibility_token);
         self.owner.write(admin);
-        self.name.write(name);
+        self.title.write(title);
         let id: u64 = get_block_timestamp();
         self.id.write(id);
 
-        self.emit(NewSpace {name,id});
+        self.emit(NewSpace { title, id });
     }
 
     #[event]
@@ -97,9 +99,9 @@ mod StarkVoice {
 
     #[derive(Drop, starknet::Event)]
     struct NewSpace {
-        #[key]        
+        #[key]
         id: u64,
-        name: felt252
+        title: felt252
     }
 
     #[derive(Drop, starknet::Event)]
@@ -112,17 +114,20 @@ mod StarkVoice {
     #[external(v0)]
     impl StarkVoiceImpl of super::IStarkVoice<ContractState> {
         fn create_proposal(
-            ref self: ContractState, title: (felt252, felt252, felt252), details_ipfs_url: (felt252, felt252, felt252)
+            ref self: ContractState,
+            title: (felt252, felt252, felt252),
+            details_ipfs_url: (felt252, felt252, felt252)
         ) -> u64 {
             let proposal_count = self.proposal_count.read();
             let proposal_id = proposal_count + 1;
             let proposal = Proposal {
-                proposal_id, yes_votes: 0, no_votes: 0,
-                earliest:BoundedU64::min(),
-                latest:BoundedU64::max(),
+                proposal_id,
+                yes_votes: 0,
+                no_votes: 0,
+                earliest: BoundedU64::min(),
+                latest: BoundedU64::max(),
                 title,
                 details_ipfs_url,
-
             };
             self.proposals.write(proposal_id, proposal);
             self.emit(NewProposal { proposal_id, title });
@@ -161,7 +166,9 @@ mod StarkVoice {
             self._can_vote(user_address, proposal_id)
         }
 
-        fn get_proposal_title(self: @ContractState, proposal_id: u64) -> (felt252, felt252, felt252) {
+        fn get_proposal_title(
+            self: @ContractState, proposal_id: u64
+        ) -> (felt252, felt252, felt252) {
             let proposal = self.proposals.read(proposal_id);
             proposal.title
         }
@@ -170,7 +177,9 @@ mod StarkVoice {
             self.eligibility_token.read()
         }
 
-        fn configure_timewindow(ref self: ContractState, proposal_id: u64, earliest: u64, latest: u64) {
+        fn configure_timewindow(
+            ref self: ContractState, proposal_id: u64, earliest: u64, latest: u64
+        ) {
             self._only_owner();
             let mut proposal = self.proposals.read(proposal_id);
             let current_time = get_block_timestamp();
@@ -206,12 +215,13 @@ mod StarkVoice {
             if (has_tokens == false) {
                 self.emit(UnauthorizedAttempt { unauthorized_address: user_address, proposal_id });
             }
-            if(is_window_open == false) {
-                self.emit(VotingWindowClosed {
-                    proposal_id,
-                    earliest: proposal.earliest,
-                    latest: proposal.latest
-                })
+            if (is_window_open == false) {
+                self
+                    .emit(
+                        VotingWindowClosed {
+                            proposal_id, earliest: proposal.earliest, latest: proposal.latest
+                        }
+                    )
             }
 
             assert(has_tokens == true, 'INSUFFICIENT_TOKEN_BALANCE');
@@ -221,7 +231,6 @@ mod StarkVoice {
         fn _can_vote(
             self: @ContractState, user_address: ContractAddress, proposal_id: u64
         ) -> bool {
-
             let has_tokens = self._has_tokens();
             let has_voted = self.has_voted.read((proposal_id, user_address));
             let is_window_open = self._is_window_open(proposal_id);
