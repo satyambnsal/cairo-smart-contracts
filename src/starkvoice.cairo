@@ -11,7 +11,8 @@ trait IStarkVoice<TContractState> {
     fn create_proposal(
         ref self: TContractState,
         title: (felt252, felt252, felt252),
-        details_ipfs_url: (felt252, felt252, felt252)
+        details_ipfs_url: (felt252, felt252, felt252),
+        proposal_id: u64
     ) -> u64;
     fn eligibility_token(self: @TContractState) -> ContractAddress;
     fn configure_timewindow(ref self: TContractState, proposal_id: u64, earliest: u64, latest: u64);
@@ -51,8 +52,12 @@ mod StarkVoice {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, admin: ContractAddress, eligibility_token: ContractAddress, title: felt252) {
-
+    fn constructor(
+        ref self: ContractState,
+        admin: ContractAddress,
+        eligibility_token: ContractAddress,
+        title: felt252
+    ) {
         let erc20_token = ERC20ABIDispatcher { contract_address: eligibility_token };
         let balance = erc20_token.balance_of(admin);
         assert(balance > 0, 'TOKEN_BALANCE_IS_ZERO');
@@ -116,10 +121,10 @@ mod StarkVoice {
         fn create_proposal(
             ref self: ContractState,
             title: (felt252, felt252, felt252),
-            details_ipfs_url: (felt252, felt252, felt252)
+            details_ipfs_url: (felt252, felt252, felt252),
+            proposal_id: u64
         ) -> u64 {
             let proposal_count = self.proposal_count.read();
-            let proposal_id = proposal_count + 1;
             let proposal = Proposal {
                 proposal_id,
                 yes_votes: 0,
@@ -130,6 +135,7 @@ mod StarkVoice {
                 details_ipfs_url,
             };
             self.proposals.write(proposal_id, proposal);
+            self.proposal_count.write(proposal_count + 1);
             self.emit(NewProposal { proposal_id, title });
             proposal_id
         }
