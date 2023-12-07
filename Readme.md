@@ -1,4 +1,10 @@
-# Cairo Smart contracts
+
+# StarkVoice: **Decentralised Voting Platform**
+
+Welcome to our innovative Decentralized Voting Platform, a cutting-edge system designed to empower users by providing a secure and transparent way to participate in decision-making processes. This platform leverages blockchain technology to ensure trust, transparency, and efficiency in voting on various proposals. This platform will primarily be available to Starknet.
+
+
+
 Smart contracts written in cairo1.0
 
 
